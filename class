@@ -1,0 +1,195 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <iomanip>
+#include <ctime>
+#include <sstream>
+#include <fstream>
+using namespace std;
+
+class Persona	// абстрактный класс
+{
+public:
+	virtual string GetInfo() const = 0;	// вывести информацию
+	virtual short ShowAge() = 0;	// рассчитать возраст
+};
+
+class Enrollee : public Persona // класс - абитуриент
+{
+protected:
+	string surname;
+	string faculty;
+	struct
+	{
+		int year;
+		short day;
+		short month;
+	};
+public:
+	Enrollee() : surname("None"), faculty("None"), year(999), day(999), month(999)	// конструктор по умолчанию
+	{};
+	Enrollee(string surname, string faculty, int year, short day, short month) : surname(surname), faculty(faculty), year(year), day(day), month(month) // с парметрами
+	{};
+
+	 string  GetInfo() const	// возвращает в строке все сведения о персоне
+	{
+		stringstream ss;
+		string str;
+		ss << "Surname: " << surname << endl << "Faculty: " << faculty << endl << "Birth date: " << day << '.'
+			<< setw(2) << setfill('0') << month << '.' << year << endl;
+		str = ss.str();
+		return str;
+	}
+
+	 short ShowAge()  // рассчитать и вернуть текущий возраст
+	{
+		time_t seconds = time(NULL);
+		tm* per = localtime(&seconds);
+		if (per->tm_wday >= day && per->tm_mon >= month)
+			return per->tm_year + 1900 - year;
+		return per->tm_year - year + 1900 - 1;
+	};
+};
+
+class Student : public Enrollee // класс - студент
+{
+protected:
+	short course;
+public:
+	Student() : Enrollee(), course(999)
+	{};
+	Student(string surname, string faculty, int year, short day, short month, short course) : Enrollee(surname, faculty, year, day, month), course(course)
+	{};
+
+	string GetInfo() const override 
+	{
+		string str;
+		stringstream ss;
+		ss << "Surname: " << surname << endl << "Faculty: " << faculty << endl << "Birth date: " << day << '.' << setw(2) << setfill('0') << month
+			<< '.' << year << endl << "Course: " << course << endl;
+		str = ss.str();
+		return str;
+	}
+};
+
+class Teacher : public Enrollee // класс - преподаватель
+{
+protected:
+	string position;
+	int experience;
+public:
+	Teacher() : Enrollee(), position("None"), experience(999)
+	{};
+	Teacher(string surname, string faculty, int year, short day, short month, string position, short experience) : Enrollee(surname, faculty, year, day, month), position(position), experience(experience)
+	{};
+
+	string GetInfo() const override
+	{
+		string str;
+		stringstream ss;
+		ss << "Surname: " << surname << endl << "Faculty: " << faculty << endl << "Birth date: " << day << '.' << setw(2) << setfill('0') << month 
+			<< '.' << year << endl << "Position: " << position << endl << "Experience: " << experience << " year(s)\n";
+		str = ss.str();
+		return str;
+	}
+};
+
+ostream& operator<<(ostream& out, const Persona* per)	// перегрузка вывода в поток
+{
+	return out << per->GetInfo();
+}
+
+void foo(short choice, const int N,  Persona* person[])	// отображение информации
+{
+	short low, high;
+	switch (choice)
+	{
+	case '1':	// вывод всех данных
+		cout << "Result: \n";
+		for (int i = 0; i < N; ++i)
+		{
+			cout << i + 1 << ".\n";
+			cout << person[i];
+			cout << person[i]->ShowAge() << " years old" << endl << endl;
+		};
+		break;
+	case '2':	// найти в возрастном диапозоне 
+		cout << "Enter the range: ";
+		cin >> low >> high;
+		cout << "Result: \n";
+		for (int i = 0; i < N; ++i)
+		{
+			if (low <= person[i]->ShowAge() && person[i]->ShowAge() <= high)
+			{
+				cout << i + 1 << ".\n";
+				cout << person[i];
+			}
+		}
+		break;
+	default:
+		cout << "output error";
+		break;
+	}
+}
+
+
+
+int main()
+{
+	ifstream in("input.txt");
+
+	// организация файловой инициализации
+	short pick;
+	enum { enrollee = 1, student, teacher };
+	const int N = 5;
+	Persona* person[N]; // массив указателей на тип класса Persona
+	int i = 0;
+	while (in >> pick)  // пока файл не пустой, читать с него цифру в начале строки
+	{
+		string surname;
+		string faculty;
+		int year;
+		short day;
+		short month;
+		in >> surname >> faculty >> year >> day >> month;
+		switch (pick)
+		{
+		case enrollee:
+   // создание объекта класса, инициализация его конструктором
+			person[i] = new Enrollee(surname, faculty, year, day, month); // установка указателя на участок памяти, который выделился под экземляр класса Enrollee
+			++i;
+			break;
+      
+		case student:
+			short course;
+			in >> course;
+			person[i] = new Student(surname, faculty, year, day, month, course);
+			++i;
+			break;
+      
+		case teacher:
+		{
+			string position;
+			int experience;
+			in >> position >> experience;
+			person[i] = new Teacher(surname, faculty, year, day, month, position, experience);
+			++i;
+			break;
+		}
+		default:
+		{
+			cout << "initialization error";
+			return 0;
+		}
+		}
+	}
+	in.close();
+
+
+	// вывети все данные / подбор лиц по возрасту
+
+	char choice;
+	cout << "1) Show info\n2) Search       _\b";
+	cin >> choice;
+
+	foo(choice, N, person); // отображение выбранной информации
+}
