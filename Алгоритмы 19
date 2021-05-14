@@ -1,0 +1,116 @@
+#include<iostream>
+#include<fstream>
+#include<vector>
+#include<algorithm>
+#include<iomanip>
+#include<exception>
+
+using namespace std;
+
+// возвращает true, если точка выше прямой y = |x| и ее радиус-вектор меньше
+bool Comp(const pair<int, int>& p1, const pair<int, int>& p2)	
+{
+
+	return (p1.second > abs(p1.first) && sqrt(p1.first * p1.first + p1.second * p1.second) < sqrt(p2.first * p2.first + p2.second * p2.second));
+
+}
+
+
+
+int main()
+{
+	ifstream in;
+	in.exceptions(ifstream::badbit | ifstream::failbit);
+
+	try {
+		in.open("iput.txt");
+	}
+	catch (exception& ex) {
+		cout << endl << ex.what() << endl;
+		cout << "File openning error\n";
+		return 0;
+	}
+
+
+
+	int n;
+	in >> n;
+	vector <pair<int, int>> points;
+	points.reserve(n);
+
+	
+	while(n) {
+
+		pair<int, int> p;
+		in >> p.first >> p.second;
+		points.push_back(p);	
+		
+		--n;
+
+	}
+in.close();
+
+	setlocale(LC_ALL, "RU");
+	cout << " a) удалить все точки из квадрата со стороной A с центром в начале координат\n \
+b) подсчитать количество точек, лежащих правее оси y\n \
+c) найти самую близкую к началу координат среди точек, лежащих выше y = |x|\n \
+d) расположить в порядке приближения к началу координат, сохраняя исходный порядок при одинаковом расстоянии\n \
+p) напечатать точки\n";
+
+
+	bool soo = true;
+	while (soo) {
+
+		char t;
+		cin >> t;
+		switch (t) {
+
+		case('a'):
+
+			double square_side;
+			cout << " Сторона квадрата = ";
+			cin >> square_side;
+			points.erase(remove_if(points.begin(), points.end(), [&](const pair<int, int> p) ->bool
+				{return (abs(p.first) <= square_side / 2 && abs(p.second) <= square_side / 2); }), points.end());
+			cout << " done\n\n";
+			break;
+
+		case('b'):
+		{
+			int num = count_if(points.begin(), points.end(), [&](const pair<int, int> p) -> bool {return p.first > 0; });
+			cout << num << " point(s)\n\n";
+			break;
+		}
+		case('c'):
+		{
+			vector <pair<int, int>>::iterator result;
+			result = min_element(points.begin(), points.end(), Comp);
+
+			if ((*result).second > abs((*result).first))
+				cout << " Точка " << (*result).first << ' ' << (*result).second << "\n\n";
+			else cout << " Совпадений нет\n\n"; }
+			break;
+		
+
+		case('d'):
+
+			//	сравнение радиус-векторов
+			stable_sort(points.begin(), points.end(), [&](const pair<int, int>& p1, const pair<int, int>& p2) ->bool
+				{ return sqrt(p1.first * p1.first + p1.second * p1.second) < sqrt(p2.first * p2.first + p2.second * p2.second); });
+
+			cout << " Отсортировано\n\n";
+			break;
+
+		case('p'):
+
+			for (int i = 0; i < points.size(); ++i) {
+				cout << "i: " << i << '\t' << right << setw(3) << points[i].first << ' ' << setw(3) << points[i].second << endl;
+
+			}
+			cout << endl;
+			break;
+
+		default: soo = false;
+		}
+	}
+}
